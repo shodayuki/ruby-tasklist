@@ -1,13 +1,13 @@
 class TasksController < ApplicationController
   before_action :require_user_logged_in
-  before_action :current_user
+  before_action :correct_user, only: [:destroy]
   
   def index
-    @tasks = Task.all
+    @tasks = current_user.tasks.all
   end
 
   def show
-    @task = Task.find(params[:id])
+    @task = current_user.tasks.find(params[:id])
   end
 
   def new
@@ -20,9 +20,9 @@ class TasksController < ApplicationController
       flash[:success] = 'タスクを投稿しました。'
       redirect_to root_url
     else
-      @tasks = current_user.tasks.order(id: :desc)
+      @tasks = current_user.tasks
       flash.now[:danger] = 'タスクの投稿に失敗しました。'
-      render new
+      render :new
     end
   end
 
@@ -53,6 +53,13 @@ class TasksController < ApplicationController
   private
 
   def task_params
-    params.require(:task).permit(:content, :status)
+    params.require(:task).permit(:content, :status, :user_id)
+  end
+  
+  def correct_user
+    @task = current_user.tasks.find_by(id: params[:id])
+    unless @task
+      redirect_to root_url
+    end
   end
 end
